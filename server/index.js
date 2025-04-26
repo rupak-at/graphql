@@ -1,12 +1,29 @@
-import { GraphQLInt, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
+import { GraphQLBoolean, GraphQLID, GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
 import { createHandler } from 'graphql-http/lib/use/express';
 import {ruruHTML} from "ruru/server"
 import express from 'express';
+import { db } from './db.js';
+import { User } from './models/userModels.js';
+
+db()
+
+
+//all fields name as in the mongoose schema and define the types using GraphQLObjectType
+const UserTypes = new GraphQLObjectType({
+  name: "User", 
+  fields:{
+    id: {type: GraphQLID},
+    name: {type: GraphQLString},
+    email: {type: GraphQLString},
+    password: {type: GraphQLString},
+    isAdmin: {type: GraphQLBoolean}
+  }
+})
  
 // Construct a schema
-const schema = new GraphQLSchema({
+const schema = new GraphQLSchema({ // what resolvers will be used
   query: new GraphQLObjectType({
-    name: 'Query',
+    name: 'Query', // like get route and used to only for getting data fron db
     fields: {
       hello: { 
         type: GraphQLString,
@@ -22,6 +39,47 @@ const schema = new GraphQLSchema({
           num: {type: GraphQLInt}
         }, 
         resolve: (_, {num}) => num * num
+      },
+      getAllUser: {
+        type: new GraphQLList(UserTypes), //tells what data will be returned
+        resolve: async() => { // resolvers like controllers
+          try {
+            const users = await User.find()
+            return users
+          } catch (error) {
+            console.log(error)
+          }
+        }
+        
+      },
+      getFilteredUser:{
+        type: new GraphQLList(UserTypes),
+        args:{
+          isAdmin: {type: GraphQLBoolean},
+          name: {type: GraphQLString},
+          email: {type: GraphQLString}
+        },
+        resolve: async(_, args) =>{
+          try {
+            let filter = {}
+            if (typeof args.isAdmin === "boolean") {
+              filter.isAdmin = args.isAdmin
+            }
+
+            if (typeof args.email === "string") {
+              filter.email = args.email
+            }
+
+            if (typeof args.name === "string") {
+              filter.name = args.name
+            }
+            const user =  await User.find(filter)
+
+            return user
+          } catch (error) {
+            console.log(error)
+          }
+        }
       }
     },
   }),
@@ -29,6 +87,8 @@ const schema = new GraphQLSchema({
  
 const app = express();
 
+
+//to get the graphiql page / interface
 app.get('/', (_req, res) => {
   res.type('html');
   res.end(ruruHTML({ endpoint: '/graphql' }));
