@@ -1,4 +1,4 @@
-import { GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
+import { GraphQLInt, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
 import { createHandler } from 'graphql-http/lib/use/express';
 import {ruruHTML} from "ruru/server"
 import express from 'express';
@@ -12,6 +12,17 @@ const schema = new GraphQLSchema({
         type: GraphQLString,
         resolve: () => 'Hello world!'
       },
+      giveMeRandomNumber : {
+        type: GraphQLInt,
+        resolve: () => Math.floor(Math.random() * 100)
+      }, 
+      squaringNumber : {
+        type: GraphQLInt,
+        args: {
+          num: {type: GraphQLInt}
+        }, 
+        resolve: (_, {num}) => num * num
+      }
     },
   }),
 });
