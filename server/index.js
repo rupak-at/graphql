@@ -83,6 +83,48 @@ const schema = new GraphQLSchema({ // what resolvers will be used
       }
     },
   }),
+  mutation: new GraphQLObjectType({
+    name: 'Mutation',
+    fields:{
+      createUser:{
+        type: UserTypes,
+        args:{
+          name: {type: GraphQLString},
+          email: {type: GraphQLString},
+          password: {type: GraphQLString},
+          isAdmin: {type: GraphQLBoolean}
+        },
+        resolve: async(_, args) =>{
+          try {
+            const user = await User.create(args)
+            if (!user) throw new Error('User not created')
+
+            return user
+          } catch (error) {
+            console.log(error)
+            throw new Error('User not created')
+          }
+        }
+      }, 
+      deleteUser:{
+        type: UserTypes,
+        args: {
+          id: {type: GraphQLID}
+        },
+        resolve: async(_, args) => {
+          try {
+            const user = await User.findByIdAndDelete(args.id)
+            if (!user) throw new Error('User not deleted')
+            return user
+          } catch (error) {
+            console.log(error)
+            throw new Error('User not deleted')
+          }
+        }
+      }
+
+    }
+  })
 });
  
 const app = express();
